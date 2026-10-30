@@ -437,6 +437,7 @@
 
                 if (abrir) cerrarPanelesMapa('capas');
                 control.classList.toggle('capas-auxiliares-abiertas', abrir);
+                document.body.classList.toggle('capas-movil-abiertas', abrir && window.matchMedia('(max-width: 896px)').matches);
                 control.classList.toggle('capas-auxiliares-cerradas', !abrir);
                 boton.setAttribute('aria-expanded', abrir ? 'true' : 'false');
                 boton.setAttribute('aria-label', abrir ? 'Cerrar capas adicionales' : 'Abrir capas adicionales');
@@ -445,6 +446,17 @@
 
             boton.addEventListener('click', function() { alternarPanel(); });
             tituloPanel.addEventListener('click', function() { alternarPanel(false); });
+            var cerrarCapasRetiros = document.getElementById('cerrar-capas-retiros');
+            if (cerrarCapasRetiros) cerrarCapasRetiros.addEventListener('click', function() {
+                alternarPanel(false);
+                boton.focus();
+            });
+            panel.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    alternarPanel(false);
+                    boton.focus();
+                }
+            });
             if (retiroVisible) {
                 retiroVisible.addEventListener('change', function() {
                     if (!window.capaRetiros) return;

@@ -8,7 +8,7 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <link rel="stylesheet" href="css/app.css?v=20261030-bienvenida1">
+        <link rel="stylesheet" href="css/app.css?v=20261030-capas-sheet2">
         <title>Niveles operacionales — San Borja</title>
         <script src="js/usos.js?v=20260917-sin-actividades-excluidas1"></script>
         <script src="js/app/preservar-usos-anteriores.js?v=20260930-restricciones-complemento1"></script>
@@ -85,7 +85,11 @@
         </div>
 
         <aside id="panel-capas-retiros" class="panel-capas-retiros" aria-label="Capas del mapa de retiros" hidden>
-            <h3 class="retiros-panel-titulo">Capas del mapa</h3>
+            <header class="retiros-panel-header">
+                <h3 class="retiros-panel-titulo"><i class="fas fa-layer-group" aria-hidden="true"></i>Capas del mapa</h3>
+                <button type="button" id="cerrar-capas-retiros" aria-label="Cerrar capas del mapa"><i class="fas fa-times" aria-hidden="true"></i></button>
+            </header>
+            <div class="retiros-panel-contenido">
             <p class="retiros-panel-ayuda">Activa las capas que necesitas para comparar lotes y retiros.</p>
             <div class="retiros-capas-grupo">
                 <h3>Predios</h3>
@@ -111,6 +115,7 @@
                 <span><i class="muestra-retiros-linea muestra-retiros-linea-5"></i>Retiro de 5 m</span>
                 <span><i class="muestra-retiros-linea muestra-retiros-linea-3"></i>Retiro de 3 m</span>
                 <span><i class="muestra-retiros-poligono"></i>Área de retiro (gris)</span>
+            </div>
             </div>
         </aside>
 
@@ -192,7 +197,7 @@
         <script src="js/app/core.js?v=20261030-rendimiento1"></script>
         <script src="js/app/legend-filters.js?v=20261029-atd1"></script>
         <script src="js/app/layers.js?v=20261029-atd1"></script>
-        <script src="js/app/controls.js?v=20261020-auditoria1"></script>
+        <script src="js/app/controls.js?v=20261030-capas-sheet2"></script>
         <script src="js/app/visor-retiros.js?v=20261029-atd1"></script>
         <script src="js/app/panel.js?v=20261029-mz3"></script>
         <script src="js/app/inicio.js?v=20261030-bienvenida1"></script>
