@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/app.css?v=20261030-bienvenida1">
+        <title>Niveles operacionales — San Borja</title>
+        <script src="js/usos.js?v=20260917-sin-actividades-excluidas1"></script>
+        <script src="js/app/preservar-usos-anteriores.js?v=20260930-restricciones-complemento1"></script>
+        <script src="js/restricciones.js?v=20261014-residencial-exclusivo-nota1"></script>
+        <script src="js/indice_distrital_actual.js?v=20261013-indice-distrital-final1"></script>
+        <script src="js/nombres_comunes_giros.js?v=20261020-nombres-comunes2"></script>
+        <script src="js/actividades_zre.js?v=20261013-indice-zre-revision1"></script>
+        <script src="data/vias.js"></script>
+    </head>
+    <body class="modo-retiros inicio-cargando">
+        <header id="encabezado-institucional" class="encabezado-institucional" aria-label="Municipalidad de San Borja — Visor de retiros normativos">
+            <div class="encabezado-marca">
+                <span class="logo-escudo-encabezado" aria-hidden="true"><img src="assets/Logo-institucional.png?v=20261015" alt=""></span>
+                <span class="encabezado-municipalidad">Municipalidad<br>de San Borja</span>
+            </div>
+            <span class="encabezado-separador" aria-hidden="true"></span>
+            <div class="encabezado-titulos">
+                <h1 id="titulo-visor-principal">Visor de retiros normativos del distrito de San Borja</h1>
+                <span class="encabezado-titulo-separador" aria-hidden="true"></span>
+                <p class="encabezado-subtitulo">Consulta de polígonos y líneas de retiro</p>
+            </div>
+        </header>
+
+        <div id="map"></div>
+
+        <dialog id="bienvenida-visor" aria-labelledby="bienvenida-titulo" aria-describedby="bienvenida-descripcion">
+            <button type="button" class="bienvenida-cerrar" aria-label="Cerrar bienvenida e ingresar al visor">×</button>
+            <span class="modal-logo-recorte" aria-hidden="true"><img class="modal-logo" src="assets/Logo-institucional.png?v=20261015" alt=""></span>
+            <p class="bienvenida-institucion">Municipalidad de San Borja</p>
+            <h2 id="bienvenida-titulo">Visor de la ordenanza XXXX que establece los niveles operacionales de San Borja</h2>
+            <p class="bienvenida-subtitulo">Consulta interactiva del mapa distrital</p>
+            <p id="bienvenida-descripcion">Explore la información del distrito de San Borja y consulte los lotes, las áreas y las líneas de retiro disponibles en el mapa.</p>
+            <section class="bienvenida-instrucciones" aria-labelledby="bienvenida-como">
+                <h3 id="bienvenida-como">¿Cómo usar el visor?</h3>
+                <ul>
+                    <li>Use la lupa para buscar una vía, dirección o código de lote.</li>
+                    <li>Haga clic en un lote, área o línea de retiro para consultar sus datos.</li>
+                    <li>Abra Capas para elegir la información visible y Transparencia para ajustar la vista del mapa.</li>
+                </ul>
+            </section>
+            <button type="button" class="bienvenida-ingresar" autofocus>Ingresar al visor</button>
+            <footer class="bienvenida-fuente">Fuente: Municipalidad de San Borja</footer>
+        </dialog>
+
+        <div id="bloque-superior-izquierdo">
+            <div id="buscador-vias-container" class="buscador-cerrado">
+                <button type="button" id="boton-buscar-vias" aria-label="Abrir buscador de vías" aria-expanded="false">
+                    <i class="fas fa-search"></i>
+                </button>
+                <i class="fas fa-search icono-lupa"></i>
+                <input type="text" id="buscador-vias" placeholder="Vía y número, dirección completa" autocomplete="off" aria-label="Buscar vía y número o dirección completa">
+                <button type="button" id="boton-limpiar-vias" aria-label="Limpiar búsqueda de vía" title="Limpiar búsqueda" hidden>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+                <div id="sugerencias-vias"></div>
+            </div>
+            <section id="direcciones-lote-panel" class="direcciones-lote-panel" hidden aria-labelledby="titulo-direcciones-lote">
+                <div class="direcciones-lote-cabecera">
+                    <h3 id="titulo-direcciones-lote">Direcciones vinculadas</h3>
+                    <span id="conteo-direcciones-lote"></span>
+                </div>
+                <ul id="lista-direcciones-lote"></ul>
+            </section>
+        </div>
+
+        <button type="button" id="boton-detalle-movil" aria-label="Abrir detalle del lote" aria-expanded="false">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+        </button>
+
+        <div id="brujula-movil" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="presentation">
+                <path d="M12 2.25 19.15 21 12 17.1 4.85 21 12 2.25Z"></path>
+            </svg>
+        </div>
+
+        <aside id="panel-capas-retiros" class="panel-capas-retiros" aria-label="Capas del mapa de retiros" hidden>
+            <h3 class="retiros-panel-titulo">Capas del mapa</h3>
+            <p class="retiros-panel-ayuda">Activa las capas que necesitas para comparar lotes y retiros.</p>
+            <div class="retiros-capas-grupo">
+                <h3>Predios</h3>
+                <label><input type="checkbox" data-retiro-capa="lotes" checked disabled><i class="muestra-retiros-poligono-gris" aria-hidden="true"></i><span>Lotes grises</span></label>
+                <label><input type="checkbox" data-retiro-capa="compatibles" checked disabled><i class="muestra-retiros-poligono-azul" aria-hidden="true"></i><span>Lotes compatibles</span></label>
+            </div>
+            <div class="retiros-capas-grupo">
+                <h3>Retiros normativos</h3>
+                <label><input type="checkbox" data-retiro-capa="poligonos" checked disabled><i class="muestra-retiros-poligono" aria-hidden="true"></i><span>Áreas de retiro</span></label>
+                <label><input type="checkbox" data-retiro-capa="lineas3" checked disabled><i class="muestra-retiros-linea muestra-retiros-linea-3" aria-hidden="true"></i><span>Líneas de retiro · 3 m</span></label>
+                <label><input type="checkbox" data-retiro-capa="lineas5" checked disabled><i class="muestra-retiros-linea muestra-retiros-linea-5" aria-hidden="true"></i><span>Líneas de retiro · 5 m</span></label>
+            </div>
+            <div class="retiros-capas-grupo retiros-capas-grupo-contexto">
+                <h3>Contexto</h3>
+                <label><input type="checkbox" data-retiro-capa="contexto" checked disabled><i class="muestra-retiros-contexto" aria-hidden="true"></i><span>Área urbana</span></label>
+            </div>
+            <div class="retiros-capas-grupo">
+                <h3>Vías</h3>
+                <label><input type="checkbox" data-retiro-capa="vias" checked><i class="muestra-retiros-vias" aria-hidden="true"></i><span>Vías y nombres</span></label>
+            </div>
+            <div class="leyenda-retiros" aria-label="Leyenda de retiros normativos">
+                <h3>Líneas de retiros normativas</h3>
+                <span><i class="muestra-retiros-linea muestra-retiros-linea-5"></i>Retiro de 5 m</span>
+                <span><i class="muestra-retiros-linea muestra-retiros-linea-3"></i>Retiro de 3 m</span>
+                <span><i class="muestra-retiros-poligono"></i>Área de retiro (gris)</span>
+            </div>
+        </aside>
+
+        <div id="panel-usos" class="minimizado">
+            <button type="button" id="boton-altura-panel" class="boton-altura-panel" aria-label="Expandir detalle del lote"></button>
+            <div class="cabecera-negra">
+                <div class="panel-titulos">
+                    <h4>Actividades urbanas permitidas y permitidas con restricción en el lote</h4>
+                </div>
+                <button type="button" class="area-arrastre" id="boton-arrastre" aria-label="Cerrar detalle del lote">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="panel-resumen">
+                <div class="panel-titulos">
+                    <h3 id="nombre-uso-titulo">Seleccione un polígono</h3>
+                    <p id="ayuda-panel">Haz clic en un lote del mapa para consultar usos compatibles.</p>
+                </div>
+                <div id="meta-lote-zonificacion" class="meta-lote-zonificacion" hidden>
+                    <span id="chip-zonificacion-vigente" class="chip-lote chip-zonificacion"></span>
+                    <span id="chip-identificacion-lote" class="chip-lote"></span>
+                    <span id="chip-area-lote" class="chip-lote"></span>
+                </div>
+                <div id="selector-edificacion" class="selector-edificacion" hidden aria-label="Escenario de edificación">
+                    <span class="selector-edificacion-titulo">Edificación</span>
+                    <div class="selector-edificacion-opciones">
+                        <button type="button" id="escenario-existente" aria-pressed="true">Existente</button>
+                        <button type="button" id="escenario-con-obra" aria-pressed="false">Con obra</button>
+                    </div>
+                </div>
+                <div class="buscador-actividad-wrap">
+                    <input type="text" id="buscador-actividad" placeholder="Buscar actividad o codigo" aria-label="Buscar actividad compatible">
+                    <button type="button" id="limpiar-busqueda-actividad" aria-label="Borrar búsqueda" title="Borrar búsqueda" hidden>
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="contenido-scrollable">
+                <div id="retiros-detalle" hidden>
+                    <p class="retiros-detalle-intro">Selecciona un lote, un área o una línea de retiro para consultar sus datos.</p>
+                    <div id="retiros-detalle-campos"></div>
+                </div>
+                <div id="ventanas-zona">
+                    <div id="ventana-observaciones">
+                        <details class="panel-seccion-acordeon">
+                            <summary>Observaciones</summary>
+                            <span id="texto-observaciones"></span>
+                        </details>
+                    </div>
+                    <div id="ventana-restricciones">
+                        <details class="panel-seccion-acordeon">
+                            <summary>Restricciones y notas</summary>
+                            <span id="texto-restricciones"></span>
+                        </details>
+                    </div>
+                </div>
+                <p id="conteo-resumen">
+                    Haz clic en un polígono del mapa para consultar...
+                </p>
+                <div id="lista-clases-container"></div>
+            </div>
+        </div>
+
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.textpath.min.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+
+        <script src="data/usos_compatibles_0.js?v=20261001-poligono-faltante1"></script>
+        <script src="data/parques_alineados_20261001.js?v=20261001-parques1"></script>
+        <script src="data/urbanizaciones_etapas.js?v=20261028-urbanizaciones1"></script>
+        <script src="data/areas_tratamiento_diferenciado.js?v=20261028-atd1"></script>
+        <script defer src="data/zonificacion_auxiliar.js?v=20261001-poligono-faltante1"></script>
+        <script defer src="js/app/zonificacion.js?v=20260930-revisadas1"></script>
+        <script src="data/Bordes_1.js?v=20260924-bordes1"></script>
+        <script src="data/poligono_retiros_con_codigos_2.js?v=20261019-retiro-normativo1"></script>
+
+        <script src="js/app/core.js?v=20261030-rendimiento1"></script>
+        <script src="js/app/legend-filters.js?v=20261029-atd1"></script>
+        <script src="js/app/layers.js?v=20261029-atd1"></script>
+        <script src="js/app/controls.js?v=20261020-auditoria1"></script>
+        <script src="js/app/visor-retiros.js?v=20261029-atd1"></script>
+        <script src="js/app/panel.js?v=20261029-mz3"></script>
+        <script src="js/app/inicio.js?v=20261030-bienvenida1"></script>
+        <script src="js/app/ui-guard.js?v=20260805-legend2"></script>
+        <script src="js/app/map-opacity.js?v=20260824-toolbar2"></script>
+        <script src="js/app/vias-search.js?v=20261023-2"></script>
+        <script src="js/app/geoapify-config.js?v=20260928-geoapify-demo1"></script>
+        <script src="js/app/address-search.js?v=20261028-atd1"></script>
+        <script src="js/app/engine-direcciones.js?v=20261023-directorio5"></script>
+        <script src="data/directorio_direcciones.js?v=20261023-directorio3"></script>
+        <script src="js/app/direcciones-search.js?v=20261023-directorio7"></script>
+        <script src="js/app/evaluacion-lote.js?v=20261019-escenario-con-obra1"></script>
+        <script src="js/app/zonificacion-vigente.js?v=20261020-auditoria1"></script>
+        <script src="js/app/capa-zonificacion-vigente.js?v=20261020-auditoria1"></script>
+    </body>
+</html>
