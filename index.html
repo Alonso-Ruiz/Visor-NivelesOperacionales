@@ -10,13 +10,18 @@
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
         <link rel="stylesheet" href="css/app.css?v=20261030-capas-sheet2">
         <title>Niveles operacionales — San Borja</title>
-        <script src="js/usos.js?v=20260917-sin-actividades-excluidas1"></script>
-        <script src="js/app/preservar-usos-anteriores.js?v=20260930-restricciones-complemento1"></script>
-        <script src="js/restricciones.js?v=20261014-residencial-exclusivo-nota1"></script>
-        <script src="js/indice_distrital_actual.js?v=20261013-indice-distrital-final1"></script>
-        <script src="js/nombres_comunes_giros.js?v=20261020-nombres-comunes2"></script>
-        <script src="js/actividades_zre.js?v=20261013-indice-zre-revision1"></script>
-        <script src="data/vias.js"></script>
+        <script defer src="js/usos.js?v=20260917-sin-actividades-excluidas1"></script>
+        <script defer src="js/app/preservar-usos-anteriores.js?v=20260930-restricciones-complemento1"></script>
+        <script defer src="js/restricciones.js?v=20261014-residencial-exclusivo-nota1"></script>
+        <script defer src="js/indice_distrital_actual.js?v=20261013-indice-distrital-final1"></script>
+        <script defer src="js/nombres_comunes_giros.js?v=20261020-nombres-comunes2"></script>
+        <script defer src="js/actividades_zre.js?v=20261013-indice-zre-revision1"></script>
+        <script defer src="data/vias.js"></script>
+            <link rel="preload" as="script" href="data/retiros_contexto.js?v=20261009-1">
+        <link rel="preload" as="script" href="data/retiros_lineas.js?v=20261009-1">
+        <link rel="preload" as="script" href="data/retiros_poligonos_completos_20261013.js?v=20261013-retiros-capa-completa1">
+        <link rel="preload" as="script" href="data/retiros_lotes.js?v=20261009-1">
+        <link rel="preload" as="script" href="data/retiros_compatibles.js?v=20261009-1">
     </head>
     <body class="modo-retiros inicio-cargando">
         <header id="encabezado-institucional" class="encabezado-institucional" aria-label="Municipalidad de San Borja — Visor de retiros normativos">
@@ -181,36 +186,38 @@
             </div>
         </div>
 
-        <script src="js/leaflet.js"></script>
-        <script src="js/leaflet.textpath.min.js"></script>
-        <script src="js/leaflet.pattern.js"></script>
+        <script defer src="js/leaflet.js"></script>
+        <script defer src="js/app/capas-visibles.js?v=20261103-2"></script>
+        <script defer src="js/app/poligonos-mosaico.js?v=20261103-1"></script>
+        <script defer src="js/leaflet.textpath.min.js"></script>
+        <script defer src="js/leaflet.pattern.js"></script>
 
-        <script src="data/usos_compatibles_0.js?v=20261001-poligono-faltante1"></script>
-        <script src="data/parques_alineados_20261001.js?v=20261001-parques1"></script>
-        <script src="data/urbanizaciones_etapas.js?v=20261028-urbanizaciones1"></script>
-        <script src="data/areas_tratamiento_diferenciado.js?v=20261028-atd1"></script>
+        <script defer src="data/usos_compatibles_0.js?v=20261001-poligono-faltante1"></script>
+        <script defer src="data/parques_alineados_20261001.js?v=20261001-parques1"></script>
+        <script defer src="data/urbanizaciones_etapas.js?v=20261028-urbanizaciones1"></script>
+        <script defer src="data/areas_tratamiento_diferenciado.js?v=20261028-atd1"></script>
         <script defer src="data/zonificacion_auxiliar.js?v=20261001-poligono-faltante1"></script>
         <script defer src="js/app/zonificacion.js?v=20260930-revisadas1"></script>
-        <script src="data/Bordes_1.js?v=20260924-bordes1"></script>
-        <script src="data/poligono_retiros_con_codigos_2.js?v=20261019-retiro-normativo1"></script>
+        <script defer src="data/Bordes_1.js?v=20260924-bordes1"></script>
+        <script defer src="data/poligono_retiros_con_codigos_2.js?v=20261019-retiro-normativo1"></script>
 
-        <script src="js/app/core.js?v=20261030-rendimiento1"></script>
-        <script src="js/app/legend-filters.js?v=20261029-atd1"></script>
-        <script src="js/app/layers.js?v=20261029-atd1"></script>
-        <script src="js/app/controls.js?v=20261030-capas-sheet2"></script>
-        <script src="js/app/visor-retiros.js?v=20261029-atd1"></script>
-        <script src="js/app/panel.js?v=20261029-mz3"></script>
-        <script src="js/app/inicio.js?v=20261030-bienvenida1"></script>
-        <script src="js/app/ui-guard.js?v=20260805-legend2"></script>
-        <script src="js/app/map-opacity.js?v=20260824-toolbar2"></script>
-        <script src="js/app/vias-search.js?v=20261023-2"></script>
-        <script src="js/app/geoapify-config.js?v=20260928-geoapify-demo1"></script>
-        <script src="js/app/address-search.js?v=20261028-atd1"></script>
-        <script src="js/app/engine-direcciones.js?v=20261023-directorio5"></script>
-        <script src="data/directorio_direcciones.js?v=20261023-directorio3"></script>
-        <script src="js/app/direcciones-search.js?v=20261023-directorio7"></script>
-        <script src="js/app/evaluacion-lote.js?v=20261019-escenario-con-obra1"></script>
-        <script src="js/app/zonificacion-vigente.js?v=20261020-auditoria1"></script>
-        <script src="js/app/capa-zonificacion-vigente.js?v=20261020-auditoria1"></script>
+        <script defer src="js/app/core.js?v=20261103-mosaicos1"></script>
+        <script defer src="js/app/legend-filters.js?v=20261029-atd1"></script>
+        <script defer src="js/app/layers.js?v=20261103-rendimiento3"></script>
+        <script defer src="js/app/controls.js?v=20261030-capas-sheet2"></script>
+        <script defer src="js/app/visor-retiros.js?v=20261103-mosaicos1"></script>
+        <script defer src="js/app/panel.js?v=20261029-mz3"></script>
+        <script defer src="js/app/inicio.js?v=20261030-bienvenida1"></script>
+        <script defer src="js/app/ui-guard.js?v=20260805-legend2"></script>
+        <script defer src="js/app/map-opacity.js?v=20260824-toolbar2"></script>
+        <script defer src="js/app/vias-search.js?v=20261103-rendimiento3"></script>
+        <script defer src="js/app/geoapify-config.js?v=20260928-geoapify-demo1"></script>
+        <script defer src="js/app/address-search.js?v=20261028-atd1"></script>
+        <script defer src="js/app/engine-direcciones.js?v=20261023-directorio5"></script>
+        <script defer src="data/directorio_direcciones.js?v=20261023-directorio3"></script>
+        <script defer src="js/app/direcciones-search.js?v=20261023-directorio7"></script>
+        <script defer src="js/app/evaluacion-lote.js?v=20261019-escenario-con-obra1"></script>
+        <script defer src="js/app/zonificacion-vigente.js?v=20261020-auditoria1"></script>
+        <script defer src="js/app/capa-zonificacion-vigente.js?v=20261020-auditoria1"></script>
     </body>
 </html>

@@ -35,6 +35,7 @@
     var sesion = 0;
     var indiceClicPoligonos = Object.create(null);
     var informacionLinealPorArea = new WeakMap();
+    var indiceLineasClic = null;
     var tamanoCeldaClic = 0.001;
     var ultimoClicDeCapa = null;
     var ultimoCursorRetiros = 0;
@@ -176,6 +177,10 @@
         var candidatos = indiceClicPoligonos[celdaClic(punto[0], punto[1])] || [];
         for (var i = 0; i < candidatos.length; i++) {
             var candidato = candidatos[i], limites = candidato.limites;
+            var capa = candidato.titulo === 'Área de retiro' ? capaRetirosPoligonos :
+                candidato.titulo === 'Lote compatible' ? capaRetirosCompatibles :
+                candidato.titulo === 'Área urbana' ? capaRetirosContexto : capaRetirosLotes;
+            if (!capa || !map.hasLayer(capa)) continue;
             if (punto[0] < limites.minX || punto[0] > limites.maxX ||
                 punto[1] < limites.minY || punto[1] > limites.maxY) continue;
             if (puntoEnGeometria(punto, candidato.geometria)) return candidato;
@@ -187,6 +192,13 @@
         if (!activo || !e || !e.latlng) return;
         if (ultimoClicDeCapa && Date.now() - ultimoClicDeCapa.tiempo < 120 &&
             map.distance(ultimoClicDeCapa.latlng, e.latlng) < 1) return;
+        var linea = lineaBajoPunto(e.latlng);
+        if (linea) {
+            map.closePopup();
+            mostrarDetalle('Línea de retiro', linea.feature.properties, linea.feature, e.latlng,
+                { type: 'LineString', coordinates: linea.linea });
+            return;
+        }
         var candidato = poligonoBajoPunto([e.latlng.lng, e.latlng.lat]);
         if (!candidato) return;
         map.closePopup();
@@ -195,6 +207,31 @@
             propiedades = informacionLinealPorArea.get(candidato.feature) || {};
         }
         mostrarDetalle(candidato.titulo, propiedades, candidato.feature, e.latlng, candidato.geometria);
+    }
+
+    function lineaBajoPunto(latlng) {
+        if (!indiceLineasClic) return null;
+        var indice = indiceLineasClic, p = map.latLngToContainerPoint(latlng);
+        var a = map.containerPointToLatLng(p.subtract([8, 8]));
+        var b = map.containerPointToLatLng(p.add([8, 8]));
+        var minX = Math.floor(Math.min(a.lng, b.lng) / indice.tamano), maxX = Math.floor(Math.max(a.lng, b.lng) / indice.tamano);
+        var minY = Math.floor(Math.min(a.lat, b.lat) / indice.tamano), maxY = Math.floor(Math.max(a.lat, b.lat) / indice.tamano);
+        if ((maxX-minX+1)*(maxY-minY+1) > 4096) return null;
+        var vistos = new Set(), mejor = null, distancia = 8;
+        for (var x = minX; x <= maxX; x++) for (var y = minY; y <= maxY; y++) {
+            (indice.celdas[x + ':' + y] || []).forEach(function (id) {
+                if (vistos.has(id)) return;
+                vistos.add(id);
+                var s = indice.segmentos[id];
+                var ancho = String(s.feature.properties.ANCHO || '');
+                var capa = ancho.indexOf('3') === 0 ? capaRetirosLineas3m : ancho.indexOf('5') === 0 ? capaRetirosLineas5m : null;
+                if (!capa || !map.hasLayer(capa)) return;
+                var d = L.LineUtil.pointToSegmentDistance(p,
+                    map.latLngToContainerPoint([s.a[1], s.a[0]]), map.latLngToContainerPoint([s.b[1], s.b[0]]));
+                if (d < distancia) { distancia = d; mejor = s; }
+            });
+        }
+        return mejor;
     }
 
     function actualizarCursorRetiros(e) {
@@ -386,7 +423,7 @@
                 : geometria.type === 'MultiLineString' ? geometria.coordinates : [];
             lineasCoordenadas.forEach(function (linea) {
                 for (var i = 1; i < linea.length; i++) {
-                    var segmento = { a: linea[i - 1], b: linea[i], grupo: grupo };
+                    var segmento = { a: linea[i - 1], b: linea[i], grupo: grupo, feature: feature, linea: linea };
                     var indice = segmentos.push(segmento) - 1;
                     var minX = Math.floor(Math.min(segmento.a[0], segmento.b[0]) / tamanoCelda);
                     var maxX = Math.floor(Math.max(segmento.a[0], segmento.b[0]) / tamanoCelda);
@@ -402,6 +439,8 @@
                 }
             });
         });
+
+        indiceLineasClic = { celdas: celdas, segmentos: segmentos, tamano: tamanoCelda };
 
         function centroideAnillo(anillo) {
             var areaDoble = 0, cx = 0, cy = 0;
@@ -451,13 +490,13 @@
                     (celdas[x + ':' + y] || []).forEach(function (indice) { candidatos[indice] = true; });
                 }
             }
-            var distancias = grupos.map(function () { return Infinity; });
+            var distancias = Object.create(null);
             Object.keys(candidatos).forEach(function (indice) {
                 var segmento = segmentos[indice];
                 var distancia = distanciaSegmentoMetros(punto, segmento);
-                if (distancia < distancias[segmento.grupo]) distancias[segmento.grupo] = distancia;
+                if (distancias[segmento.grupo] === undefined || distancia < distancias[segmento.grupo]) distancias[segmento.grupo] = distancia;
             });
-            var orden = distancias.map(function (distancia, grupo) { return { distancia: distancia, grupo: grupo }; })
+            var orden = Object.keys(distancias).map(function (grupo) { return { distancia: distancias[grupo], grupo: Number(grupo) }; })
                 .sort(function (a, b) { return a.distancia - b.distancia; });
             var mejor = orden[0], siguiente = orden[1];
             // Solo se muestran atributos cuando una línea está cerca y su tipo destaca claramente.
@@ -480,7 +519,7 @@
             }
             var pane = map.getPane(definicion[0]);
             pane.style.zIndex = definicion[1];
-            pane.style.pointerEvents = activo ? 'auto' : 'none';
+            pane.style.pointerEvents = 'none';
         });
     }
 
@@ -490,7 +529,7 @@
             'pane_retiros_nuevos_poligonos', 'pane_retiros_nuevas_lineas'
         ].forEach(function (nombre) {
             var pane = map.getPane(nombre);
-            if (pane) pane.style.pointerEvents = activa ? 'auto' : 'none';
+            if (pane) pane.style.pointerEvents = 'none';
         });
     }
 
@@ -508,44 +547,41 @@
         var datosAreasCompatibles = obtenerPoligonosRetiro(datosAreasRetiro);
         asociarDatosLinealesAreas(datosAreasRetiro, window.geojsonRetirosLineas);
         indexarPoligonos(datosAreasCompatibles, 'Área de retiro', 3);
+        indexarPoligonos(window.geojsonRetirosContexto, 'Área urbana', 0);
         ordenarIndiceClicPoligonos();
         crearPanes();
 
         function capaPoligonal(datos, pane, estilo, titulo, interactiva) {
-            return L.geoJSON(datos, {
+            return new window.PoligonosMosaico(datos, {
                 pane: pane,
-                renderer: L.canvas({ pane: pane, padding: 0.1, tolerance: 6 }),
                 smoothFactor: 2,
                 interactive: interactiva !== false,
                 style: estilo,
-                onEachFeature: interactiva === false ? undefined : function (feature, layer) { hacerClicable(feature, layer, titulo); }
+
             });
         }
 
         capaRetirosContexto = capaPoligonal(window.geojsonRetirosContexto, 'pane_retiros_contexto', {
             color: '#cccccc', weight: 0, fillColor: '#e6e6e6', fillOpacity: 1
         }, 'Área urbana', true);
-        capaRetirosPoligonos = L.geoJSON(datosAreasCompatibles, {
+        capaRetirosPoligonos = new window.PoligonosMosaico(datosAreasCompatibles, {
             pane: 'pane_retiros_nuevos_poligonos',
             interactive: false,
-            renderer: L.canvas({ pane: 'pane_retiros_nuevos_poligonos', padding: 0.1, tolerance: 6 }),
             smoothFactor: 1,
             style: estiloPoligono
         });
-        // Un único canvas permite seleccionar ambas clases de línea sin
-        // que el lienzo superior intercepte los clics del inferior.
-        var rendererLineas = L.canvas({ pane: 'pane_retiros_nuevas_lineas', padding: 0.1, tolerance: 7 });
+        // Las líneas se dibujan en mosaicos y se consultan mediante el índice espacial.
+
         function crearLineas(ancho) {
             var features = window.geojsonRetirosLineas.features.filter(function (feature) {
                 return String(feature.properties && feature.properties.ANCHO || '').indexOf(ancho) === 0;
             });
-            return L.geoJSON({ type: 'FeatureCollection', features: features }, {
+            return new window.PoligonosMosaico({ type: 'FeatureCollection', features: features }, {
                 pane: 'pane_retiros_nuevas_lineas',
                 interactive: true,
-                renderer: rendererLineas,
                 smoothFactor: 1,
                 style: estiloLinea,
-                onEachFeature: function (feature, layer) { hacerClicable(feature, layer, 'Línea de retiro'); }
+
             });
         }
         capaRetirosLineas3m = crearLineas('3');
@@ -576,17 +612,22 @@
             var offset = 0;
             function procesarLote() {
                 try {
-                    var siguiente = Math.min(offset + 300, features.length);
-                    var lote = features.slice(offset, siguiente);
-                    if (lote.length) {
-                        indexarPoligonos({ type: 'FeatureCollection', features: lote }, titulo, prioridad);
-                        capa.addData({ type: 'FeatureCollection', features: lote });
-                    }
-                    offset = siguiente;
+                    var inicioTanda = performance.now();
+                    var siguiente = offset;
+                    do {
+                        siguiente = Math.min(siguiente + 30, features.length);
+                        var lote = features.slice(offset, siguiente);
+                        if (lote.length) {
+                            indexarPoligonos({ type: 'FeatureCollection', features: lote }, titulo, prioridad);
+                            capa.addData({ type: 'FeatureCollection', features: lote });
+                        }
+                        offset = siguiente;
+                    } while (offset < features.length && performance.now() - inicioTanda < 6);
                     if (offset < features.length) {
                         if (window.requestAnimationFrame) window.requestAnimationFrame(procesarLote);
                         else window.setTimeout(procesarLote, 16);
                     } else {
+                        if (capa.redraw) capa.redraw();
                         resolve();
                     }
                 } catch (error) {
@@ -601,18 +642,16 @@
         if (preparacionPredios) return preparacionPredios;
         if (capaRetirosLotes) return Promise.resolve();
         crearPanes();
-        capaRetirosLotes = L.geoJSON(null, {
+        capaRetirosLotes = new window.PoligonosMosaico(null, {
             pane: 'pane_retiros_lotes',
-            renderer: L.canvas({ pane: 'pane_retiros_lotes', padding: 0.1, tolerance: 6 }),
             smoothFactor: 1,
             interactive: false,
             style: {
                 color: 'rgba(197,197,197,0.85)', weight: 0.8, fillColor: '#f2f2f2', fillOpacity: 1
             }
         });
-        capaRetirosCompatibles = L.geoJSON(null, {
+        capaRetirosCompatibles = new window.PoligonosMosaico(null, {
             pane: 'pane_retiros_compatibles',
-            renderer: L.canvas({ pane: 'pane_retiros_compatibles', padding: 0.1, tolerance: 6 }),
             smoothFactor: 1,
             interactive: false,
             style: {

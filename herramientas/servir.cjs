@@ -15,7 +15,17 @@ function servir(root, port = 8080) {
         } catch {
             res.writeHead(404); res.end('No encontrado'); return;
         }
-        res.writeHead(200, { 'Content-Type': tipos[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+        const stat = fs.statSync(file);
+        const etag = 'W/"' + stat.size + '-' + stat.mtimeMs + '"';
+        const headers = {
+            'Content-Type': tipos[path.extname(file)] || 'application/octet-stream',
+            'Cache-Control': 'no-cache',
+            'ETag': etag
+        };
+        if (req.headers['if-none-match'] === etag) {
+            res.writeHead(304, headers); res.end(); return;
+        }
+        res.writeHead(200, headers);
         fs.createReadStream(file).pipe(res);
     });
     server.listen(port, '127.0.0.1', () => console.log(`http://127.0.0.1:${server.address().port}/`));

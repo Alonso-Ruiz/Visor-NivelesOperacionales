@@ -323,7 +323,7 @@
         }
 
         var rendererLotesCanvas = L.canvas({ pane: 'pane_usos_compatibles_0', padding: 0.35, tolerance: 6 });
-        var layer_usos_compatibles_0 = new L.geoJson(json_usos_compatibles_0, {
+        var layer_usos_compatibles_0 = new window.GeoJSONDiferido(json_usos_compatibles_0, {
             attribution: '',
             interactive: true,
             dataVar: 'json_usos_compatibles_0',
@@ -334,7 +334,8 @@
             style: style_usos_compatibles_0_0,
         });
         window.layer_usos_compatibles_0 = layer_usos_compatibles_0;
-        bounds_group.addLayer(layer_usos_compatibles_0); map.addLayer(layer_usos_compatibles_0);
+        bounds_group.addLayer(layer_usos_compatibles_0);
+        if (!document.body.classList.contains('modo-retiros')) map.addLayer(layer_usos_compatibles_0);
 
         // Trazado visual de parques del export de QGIS. La capa de usos
         // conserva las consultas y esta superposición no captura clics.
@@ -352,10 +353,11 @@
                 style: function(feature) {
                     return window.aplicarVisibilidadCategoria(style_parques_alineados(feature), feature);
                 }
-            }).addTo(map) : null;
+            }) : null;
+        if (layer_parques_alineados && !document.body.classList.contains('modo-retiros')) layer_parques_alineados.addTo(map);
         window.layer_parques_alineados = layer_parques_alineados;
 
-        var layer_usos_compatibles_planes = new L.geoJson(json_usos_compatibles_0, {
+        var layer_usos_compatibles_planes = new window.GeoJSONDiferido(json_usos_compatibles_0, {
             attribution: '',
             interactive: true,
             dataVar: 'json_usos_compatibles_0',
@@ -367,7 +369,8 @@
             style: style_tramado_planes_especiales,
         });
         window.layer_usos_compatibles_planes = layer_usos_compatibles_planes;
-        bounds_group.addLayer(layer_usos_compatibles_planes); map.addLayer(layer_usos_compatibles_planes);
+        bounds_group.addLayer(layer_usos_compatibles_planes);
+        if (!document.body.classList.contains('modo-retiros')) map.addLayer(layer_usos_compatibles_planes);
 
         var capaRetiros = typeof json_Polgono_retiros_concdigos_2 !== 'undefined'
             ? new L.geoJson(null, {
@@ -402,7 +405,6 @@
             : null;
         window.capaRetiros = capaRetiros;
         if (capaRetiros) {
-            map.addLayer(capaRetiros);
             // Añade los polígonos en tandas cortas: el mapa y sus controles
             // quedan interactivos mientras termina de dibujarse la capa.
             var featuresRetirosNormativos = json_Polgono_retiros_concdigos_2.features || [];
@@ -417,5 +419,8 @@
                     window.requestAnimationFrame(agregarTandaRetirosNormativos);
                 }
             }
-            window.requestAnimationFrame(agregarTandaRetirosNormativos);
+            capaRetiros.once('add', function () {
+                window.requestAnimationFrame(agregarTandaRetirosNormativos);
+            });
+            if (!document.body.classList.contains('modo-retiros')) map.addLayer(capaRetiros);
         }

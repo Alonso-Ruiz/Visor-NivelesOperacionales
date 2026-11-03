@@ -4,6 +4,8 @@
         let temporizadorViasEtiquetas = null;
         let rendererViasEtiquetas = null;
         let etiquetasViasVisibles = true;
+        const cacheEtiquetasVias = new Map();
+        const limitesVias = new WeakMap();
         cargarVias();
 
         function cargarVias() {
@@ -31,26 +33,12 @@
             return zoom >= 17;
         }
 
-        function coordenadaDentroDeVista(coords, bounds) {
-            if (!coords) return false;
-            if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
-                return bounds.contains([coords[1], coords[0]]);
-            }
-            return coords.some(function(parte) {
-                return coordenadaDentroDeVista(parte, bounds);
-            });
-        }
-
         function construirEtiquetasVias() {
-            if (capaViasEtiquetas) {
-                map.removeLayer(capaViasEtiquetas);
-                capaViasEtiquetas = null;
-            }
-
-            if (!etiquetasViasVisibles) return;
+            if (!capaViasEtiquetas) capaViasEtiquetas = L.featureGroup().addTo(map);
+            if (!etiquetasViasVisibles) { capaViasEtiquetas.clearLayers(); return; }
 
             var zoom = map.getZoom();
-            if (zoom < 14) return;
+            if (zoom < 14) { capaViasEtiquetas.clearLayers(); return; }
 
             var boundsVisibles = map.getBounds().pad(0.25);
             var featuresVisibles = datosVias.filter(function(feature) {
@@ -58,12 +46,28 @@
                 return props.NOMBRECOMP &&
                     viaVisiblePorZoom(props.NIVEL, zoom) &&
                     feature.geometry &&
-                    coordenadaDentroDeVista(feature.geometry.coordinates, boundsVisibles);
+                    (function () {
+                        if (!limitesVias.has(feature)) {
+                            var bounds = L.latLngBounds([]);
+                            function visitar(coords) {
+                                if (typeof coords[0] === 'number') bounds.extend([coords[1], coords[0]]);
+                                else coords.forEach(visitar);
+                            }
+                            visitar(feature.geometry.coordinates);
+                            limitesVias.set(feature, bounds);
+                        }
+                        return boundsVisibles.intersects(limitesVias.get(feature));
+                    })();
             });
 
-            if (featuresVisibles.length === 0) return;
-
-            capaViasEtiquetas = L.geoJson({ type: 'FeatureCollection', features: featuresVisibles }, {
+            var visibles = new Set(featuresVisibles);
+            cacheEtiquetasVias.forEach(function (layer, feature) {
+                if (!visibles.has(feature)) capaViasEtiquetas.removeLayer(layer);
+            });
+            featuresVisibles.forEach(function (feature) {
+                var existente = cacheEtiquetasVias.get(feature);
+                if (existente) { capaViasEtiquetas.addLayer(existente); return; }
+                var nueva = L.geoJson(feature, {
                 pane: 'pane_vias_lineas',
                 renderer: rendererViasEtiquetas,
                 style: { color: '#ffffff', weight: 1.5, opacity: 0.25, interactive: false },
@@ -89,19 +93,21 @@
                         } catch(e) {}
                     }
                 }
-            }).addTo(map);
+                });
+                cacheEtiquetasVias.set(feature, nueva);
+                capaViasEtiquetas.addLayer(nueva);
+            });
         }
 
         function programarActualizacionEtiquetasVias(espera) {
             clearTimeout(temporizadorViasEtiquetas);
-            temporizadorViasEtiquetas = setTimeout(construirEtiquetasVias, espera || 120);
+            temporizadorViasEtiquetas = setTimeout(construirEtiquetasVias, espera === undefined ? 120 : espera);
         }
 
         window.establecerVisibilidadVias = function(visible) {
             etiquetasViasVisibles = !!visible;
             if (!etiquetasViasVisibles && capaViasEtiquetas) {
-                map.removeLayer(capaViasEtiquetas);
-                capaViasEtiquetas = null;
+                capaViasEtiquetas.clearLayers();
             } else if (etiquetasViasVisibles) {
                 programarActualizacionEtiquetasVias(0);
             }
@@ -111,10 +117,6 @@
         map.on('movestart zoomstart', function() {
             document.body.classList.add('mapa-en-movimiento');
             clearTimeout(temporizadorViasEtiquetas);
-            if (capaViasEtiquetas) {
-                map.removeLayer(capaViasEtiquetas);
-                capaViasEtiquetas = null;
-            }
         });
 
         map.on('moveend zoomend', function() {
